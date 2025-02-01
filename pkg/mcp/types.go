@@ -170,7 +170,7 @@ type Content interface {
 
 type Annotation struct {
 	Audience []Role  `json:"audience,omitempty"`
-	Priority float64 `json:"priority,omitempty`
+	Priority float64 `json:"priority"`
 }
 
 type TextContent struct {

@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -61,5 +62,55 @@ func (p *Prompt) ValidateArguments(args map[string]string) error {
 			}
 		}
 	}
+	return nil
+}
+
+func (pm *PromptMessage) UnmarshalJSON(data []byte) error {
+	type Alias PromptMessage
+	aux := struct {
+		*Alias
+		Content json.RawMessage `json:"content"`
+	}{
+		Alias: (*Alias)(pm),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Unmarshal content based on type field
+	var contentMap map[string]interface{}
+	if err := json.Unmarshal(aux.Content, &contentMap); err != nil {
+		return err
+	}
+
+	contentType, ok := contentMap["type"].(string)
+	if !ok {
+		return fmt.Errorf("content type not found or invalid")
+	}
+
+	switch ContentType(contentType) {
+	case ContentTypeText:
+		var textContent TextContent
+		if err := json.Unmarshal(aux.Content, &textContent); err != nil {
+			return err
+		}
+		pm.Content = textContent
+	case ContentTypeImage:
+		var imageContent ImageContent
+		if err := json.Unmarshal(aux.Content, &imageContent); err != nil {
+			return err
+		}
+		pm.Content = imageContent
+	case ContentTypeResource:
+		var resourceContent EmbeddedResource
+		if err := json.Unmarshal(aux.Content, &resourceContent); err != nil {
+			return err
+		}
+		pm.Content = resourceContent
+	default:
+		return fmt.Errorf("unknown content type: %s", contentType)
+	}
+
 	return nil
 }
