@@ -1,6 +1,9 @@
-package mcp
+package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	ParseError     = -32700
@@ -11,8 +14,11 @@ const (
 )
 
 type ProgressToken interface{}
+
 type Cursor string
+
 type RequestID interface{}
+
 type Role string
 
 const (
@@ -24,7 +30,7 @@ type RequestMessage struct {
 	JSONRPC string          `json:"jsonrpc"`
 	ID      json.RawMessage `json:"id"`
 	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params,omitempty`
+	Params  json.RawMessage `json:"params,omitempty"`
 }
 
 type ResponseMessage struct {
@@ -115,11 +121,13 @@ type InitializeResult struct {
 }
 
 type Resource struct {
-	URI         string      `json:"uri"`
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty"`
-	MimeType    string      `json:"mimeType,omitempty"`
-	Annotations *Annotation `json:"annotations,omitempty"`
+	URI         string                 `json:"uri"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	MimeType    string                 `json:"mimeType,omitempty"`
+	Annotations *Annotation            `json:"annotations,omitempty"`
+	Type        string                 `json:"type,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
 type ResourceTemplate struct {
@@ -149,6 +157,82 @@ type Tool struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
 	InputSchema map[string]interface{} `json:"inputSchema"`
+}
+
+func (t *Tool) ValidateAndExecute(args map[string]interface{}) (*CallToolResult, error) {
+	if err := t.ValidateArguments(args); err != nil {
+		return nil, fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	//TODO: Mock Result
+	return &CallToolResult{
+		Content: []Content{
+			TextContent{
+				Type: string(ContentTypeText),
+				Text: "Tool execution result",
+			},
+		},
+	}, nil
+}
+
+func (t *Tool) ValidateArguments(args map[string]interface{}) error {
+	schema := t.InputSchema
+
+	if required, ok := schema["required"].([]string); ok {
+		for _, field := range required {
+			if _, exists := args[field]; !exists {
+				return fmt.Errorf("missing required field: %s", field)
+			}
+		}
+	}
+
+	if props, ok := schema["properties"].(map[string]interface{}); ok {
+		for name, value := range args {
+			if propSchema, exists := props[name]; exists {
+				if err := ValidateType(propSchema.(map[string]interface{}), value); err != nil {
+					return fmt.Errorf("invalid argument %s: %w", name, err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func ValidateType(schema map[string]interface{}, value interface{}) error {
+	expectedType, ok := schema["type"].(string)
+	if !ok {
+		return fmt.Errorf("schema missing type")
+	}
+
+	switch expectedType {
+	case "string":
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("expected string, got %T", value)
+		}
+	case "number":
+		switch v := value.(type) {
+		case float64, float32, int, int32, int64:
+		default:
+			return fmt.Errorf("expected number, got %T", v)
+		}
+	case "boolean":
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("expected boolean, got %T", value)
+		}
+	case "array":
+		if _, ok := value.([]interface{}); !ok {
+			return fmt.Errorf("expected array, got %T", value)
+		}
+	case "object":
+		if _, ok := value.(map[string]interface{}); !ok {
+			return fmt.Errorf("expected object, got %T", value)
+		}
+	default:
+		return fmt.Errorf("unsupported type: %s", expectedType)
+	}
+
+	return nil
 }
 
 type CallToolResult struct {
@@ -229,4 +313,43 @@ type ModelHint struct {
 type Root struct {
 	URI  string `json:"uri"`
 	Name string `json:"name,omitempty"`
+}
+
+type ListToolsResponse struct {
+	Tools []Tool `json:"tools"`
+}
+
+type ListResourcesResponse struct {
+	Resources []Resource `json:"resources"`
+}
+
+type ToolCall struct {
+	Name      string                 `json:"name"`
+	Arguments map[string]interface{} `json:"arguments,omitempty"`
+}
+
+type CallToolRequest struct {
+	Method string   `json:"method"`
+	Params ToolCall `json:"params"`
+}
+
+type HandshakeRequest struct {
+	Version string `json:"version"`
+	Client  struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"client"`
+}
+
+type HandshakeResponse struct {
+	Version string `json:"version"`
+	Server  struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"server"`
+}
+
+type ClientInfo struct {
+	Name    string
+	Version string
 }

@@ -1,14 +1,16 @@
-package mcp
+package prompts
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"go-mcp/pkg/mcp/protocol"
 )
 
 type PromptMessage struct {
-	Role    Role    `json:"role"`
-	Content Content `json:"content"`
+	Role    protocol.Role    `json:"role"`
+	Content protocol.Content `json:"content"`
 }
 
 type Prompt struct {
@@ -78,7 +80,6 @@ func (pm *PromptMessage) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Unmarshal content based on type field
 	var contentMap map[string]interface{}
 	if err := json.Unmarshal(aux.Content, &contentMap); err != nil {
 		return err
@@ -89,21 +90,21 @@ func (pm *PromptMessage) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("content type not found or invalid")
 	}
 
-	switch ContentType(contentType) {
-	case ContentTypeText:
-		var textContent TextContent
+	switch protocol.ContentType(contentType) {
+	case protocol.ContentTypeText:
+		var textContent protocol.TextContent
 		if err := json.Unmarshal(aux.Content, &textContent); err != nil {
 			return err
 		}
 		pm.Content = textContent
-	case ContentTypeImage:
-		var imageContent ImageContent
+	case protocol.ContentTypeImage:
+		var imageContent protocol.ImageContent
 		if err := json.Unmarshal(aux.Content, &imageContent); err != nil {
 			return err
 		}
 		pm.Content = imageContent
-	case ContentTypeResource:
-		var resourceContent EmbeddedResource
+	case protocol.ContentTypeResource:
+		var resourceContent protocol.EmbeddedResource
 		if err := json.Unmarshal(aux.Content, &resourceContent); err != nil {
 			return err
 		}
