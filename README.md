@@ -2,8 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/dhruvshrma/go-mcp.svg)](https://pkg.go.dev/github.com/dhruvshrma/go-mcp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dhruvshrma/go-mcp)](https://goreportcard.com/report/github.com/dhruvshrma/go-mcp)
-[![Build Status](https://github.com/dhruvshrma/go-mcp/workflows/CI/badge.svg)](https://github.com/dhruvshrma/go-mcp/actions)
-[![Coverage Status](https://coveralls.io/repos/github/dhruvshrma/go-mcp/badge.svg)](https://coveralls.io/github/dhruvshrma/go-mcp)
+[![codecov](https://codecov.io/gh/dhruvshrma/go-mcp/graph/badge.svg?token=AKXHB7UR57)](https://codecov.io/gh/dhruvshrma/go-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/dhruvshrma/go-mcp)](https://github.com/dhruvshrma/go-mcp)
 
