@@ -1,4 +1,4 @@
-module go-mcp
+module github.com/dgzlopes/go-mcp
 
 go 1.23
 
